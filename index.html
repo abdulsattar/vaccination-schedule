@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vaccine Calendar Generator</title>
+    <style>
+      body {
+        max-width: 80em;
+        padding: 1em;
+        font-family: system-ui;
+      }
+      table {
+        border-collapse: collapse;
+      }
+      table td {
+        padding: 0.5em 1em;
+      }
+
+      #download {
+        margin-bottom: 1em;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      <label>Date of Birth: </label>
+      <input type="date" id="dob" />
+    </p>
+    <a id="download" href="#" style="display: none" download="vaccines.ics"
+      >Download Calendar file</a
+    >
+    <table border="1"></table>
+    <script>
+      const VACCINATION_SCHEDULE = [
+        { duration: 0, type: "week", time: "Birth", title: "BCG, Hep B1, OPV" },
+        {
+          type: "week",
+          duration: 6,
+          time: "6 weeks",
+          title: "DTwP /DTaP1, Hib-1, IPV-1, Hep B2, PCV 1,Rota-1",
+        },
+        {
+          type: "week",
+          duration: 10,
+          time: "10 weeks",
+          title: "DTwP /DTaP2, Hib-2, IPV-2, Hep B3, PCV 2, Rota-2",
+        },
+        {
+          type: "week",
+          duration: 14,
+          time: "14Weeks",
+          title: "DTwP /DTaP3, Hib-3, IPV-3, Hep B4, PCV 3, Rota-3*",
+        },
+        {
+          type: "month",
+          duration: 6,
+          time: "6 Months",
+          title: "Influenza-1",
+        },
+        {
+          type: "month",
+          duration: 7,
+          time: "7 Months",
+          title: "Influenza -2",
+        },
+        {
+          type: "month",
+          duration: 7,
+          time: "6 – 9 Months",
+          title: "Typhoid Conjugate Vaccine",
+        },
+        {
+          type: "month",
+          duration: 9,
+          time: "9 Months",
+          title: "MMR 1 (Mumps, measles, Rubella)",
+        },
+        {
+          type: "month",
+          duration: 12,
+          time: "12 Months",
+          title: "Hepatitis A- 1",
+        },
+        {
+          type: "month",
+          duration: 12,
+          time: "12 – 15 Months",
+          title: "PCV Booster",
+        },
+        {
+          type: "month",
+          duration: 15,
+          time: "15 Months",
+          title: "MMR 2, Varicella",
+        },
+        {
+          type: "month",
+          duration: 16,
+          time: "16 – 18 Months",
+          title: "DTwP /DTaP, Hib, IPV",
+        },
+        {
+          type: "month",
+          duration: 18,
+          time: "18 – 19 Months",
+          title: "Hepatitis A- 2**, Varicella 2",
+        },
+        {
+          type: "year",
+          duration: 4,
+          time: "4 – 6 years",
+          title: "DTwP /DTaP, IPV, MMR 3",
+        },
+        {
+          type: "year",
+          duration: 9,
+          time: "9 – 15 years (Girls)",
+          title: "HPV (2 doses)",
+        },
+        {
+          type: "year",
+          duration: 10,
+          time: "10 – 12 Years",
+          title: "Tdap/ Td",
+        },
+        {
+          type: "year",
+          duration: 2,
+          time: "2nd Year",
+          title: "Annual Influenza Vaccine",
+        },
+        {
+          type: "year",
+          duration: 3,
+          time: "3rd Year",
+          title: "Annual Influenza Vaccine",
+        },
+        {
+          type: "year",
+          duration: 4,
+          time: "4th Year",
+          title: "Annual Influenza Vaccine",
+        },
+        {
+          type: "year",
+          duration: 5,
+          time: "5th Year",
+          title: "Annual Influenza Vaccine",
+        },
+      ];
+
+      function addDate(date, type, duration) {
+        const target = new Date(date);
+        let y = target.getFullYear();
+        let m = target.getMonth();
+        let d = target.getDate();
+
+        switch (type) {
+          case "year":
+            y += duration;
+            break;
+          case "month":
+            m += duration;
+            break;
+          case "week":
+            d += 7 * duration;
+            break;
+        }
+
+        target.setFullYear(y, m, d);
+        return target;
+      }
+
+      function getDates(date) {
+        return VACCINATION_SCHEDULE.map((event) => ({
+          ...event,
+          date: addDate(date, event.type, event.duration),
+        }));
+      }
+      document.querySelector("#dob").addEventListener("input", (e) => {
+        const date = new Date(e.target.value);
+        const dates = getDates(date);
+        showTable(dates);
+      });
+
+      function showDate(d) {
+        return d.toLocaleDateString("en-US", {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+      }
+
+      function showTable(dates) {
+        let html = "";
+
+        const downloadButton = document.querySelector("[download]");
+        downloadButton.style.display = "inline-block";
+        downloadButton.onclick = function (e) {
+          const name = prompt("Name of the child (optional)");
+          downloadButton.download = name ? `${name}.ics` : "vaccines.ics";
+          downloadButton.href =
+            "data:text/ics;charset=utf-8," + escape(getICS(dates, name));
+        };
+
+        dates.forEach(({ date, time, title }) => {
+          html += `<tr><td>${time}</td><td>${title}</td><td>${showDate(date)}`;
+        });
+        document.querySelector("table").innerHTML = html;
+      }
+
+      function formatDateForICS(date) {
+        const y = date.getFullYear();
+        const m = `${date.getMonth()}`.padStart(2, "0");
+        const d = `${date.getDate()}`.padStart(2, "0");
+
+        return y + m + d;
+      }
+
+      function getICS(dates, name) {
+        let ics = `
+          BEGIN:VCALENDAR
+          VERSION:2.0
+          PRODID:-//hacksw/handcal//NONSGML v1.0//EN
+          `;
+        dates.forEach(({ date, time, title }) => {
+          ics += `
+            BEGIN:VEVENT
+            DTSTART;VALUE=DATE:${formatDateForICS(date)}
+            SUMMARY:${title}${name ? ` (${name})` : ""}
+            END:VEVENT`;
+        });
+        ics += `
+      END:VCALENDAR
+      `;
+        return stripSpaces(ics);
+      }
+
+      function stripSpaces(text) {
+        return text
+          .split("\n")
+          .map((l) => l.trimStart())
+          .join("\n");
+      }
+    </script>
+  </body>
+</html>
